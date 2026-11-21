@@ -21,3 +21,20 @@ case "$saved_profile" in
         system76-power profile balanced
         ;;
 esac
+
+# monitor com.system76.PowerDaemon for changes to power profile
+stdbuf -oL gdbus monitor --system --dest com.system76.PowerDaemon --object-path /com/system76/PowerDaemon | while IFS= read -r line; do
+    case "$line" in
+        *PowerProfileSwitch*)
+        
+        # extract and sanitize profile, then write it to STATE_FILE
+        power_profile=$(awk -F"'" '{print $2}' <<<"$line")
+        power_profile="${power_profile,,}"
+        case "$power_profile" in
+            battery|balanced|performance)
+            printf '%s\n' "$power_profile" > "$STATE_FILE"
+            ;;
+        esac
+        ;;
+    esac
+done
