@@ -64,6 +64,8 @@ case "$saved_profile" in
 esac
 
 # switch to performance when AC is plugged in, then switch back to previous state when unplugged
+# comment out line 69 to 91 if not desired
+
 stdbuf -oL upower --monitor | while IFS= read -r line; do
     case "$line" in
         *line_power_AC*)
