@@ -15,7 +15,7 @@ A lightweight Bash daemon for **Pop!_OS** that persists your chosen `system76-po
 - Pop!_OS (tested on 24.04 only)
 - root access for installing and managing the service
 
-## Installation
+## Install
 
 Download the script, make the script executable, and run the installer:
 
@@ -26,7 +26,7 @@ sudo ./power-profile.sh install
 
 This copies the script to `/usr/local/bin/power-profile.sh`, creates `/etc/systemd/system/power-profile.service`, and enables and starts the service immediately.
 
-### Verify Installation
+### Verify Install
 
 Check if the service is running with:
 
@@ -34,7 +34,7 @@ Check if the service is running with:
 systemctl status power-profile.service
 ```
 
-## Uninstallation
+## Uninstall
 
 To stop the service and remove the installed script and unit file:
 
