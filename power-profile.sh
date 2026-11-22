@@ -5,6 +5,36 @@
 # state file used to store user chosen power profile
 STATE_FILE="/var/lib/power-profile/last_profile"
 
+# install block
+INSTALL_PATH="/usr/local/bin/power-profile.sh"
+SERVICE_PATH="/etc/systemd/system/power-profile.service"
+
+if [ "${1:-}" = "install" ]; then
+    cp "$0" "$INSTALL_PATH"
+    chmod +x "$INSTALL_PATH"
+
+    cat <<'EOF' > "$SERVICE_PATH"
+
+[Unit]
+Description=Persist System76 Power Profile
+After=system76-power.service dbus.service
+Requires=system76-power.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/power-profile.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable --now power-profile.service
+    exit 0
+fi
+
 # create last_profile if missing, giving it initial value of balanced
 if [ ! -f "$STATE_FILE" ]; then
     mkdir -p "$(dirname "$STATE_FILE")"
