@@ -8,7 +8,7 @@ A lightweight Bash daemon for **Pop!_OS** that persists your chosen `system76-po
 
 - **Reboot persistence:** Saves your selected profile (`battery`, `balanced`, or `performance`) to `/var/lib/power-profile/last_profile` and reapplies it on boot.
 - **Automatic AC switching:** Switches to `performance` when AC power is connected and restores your saved profile when unplugged.
-- **Automatic install** Includes built-in `install` and `uninstall` subcommands and runs as a `systemd` service.
+- **Automatic install:** Includes built-in `install` and `uninstall` subcommands and runs as a `systemd` service.
 
 ## Requirements
 
