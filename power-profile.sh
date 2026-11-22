@@ -5,9 +5,8 @@
 # state files used to store user chosen power profile
 STATE_FILE="/var/lib/power-profile/last_profile"
 AC_FLAG="/run/power-profile-ac.flag"
-# PRE_AC_STATE_FILE="/var/lib/power-profile/pre_AC_profile"
 
-# install block
+# install and uninstall block
 INSTALL_PATH="/usr/local/bin/power-profile.sh"
 SERVICE_PATH="/etc/systemd/system/power-profile.service"
 
@@ -35,18 +34,22 @@ EOF
     systemctl daemon-reload
     systemctl enable --now power-profile.service
     exit 0
+
+elif [ "${1:-}" = "uninstall" ]; then
+    systemctl disable --now power-profile.service 2>/dev/null || true
+    rm -f "$SERVICE_PATH"
+    systemctl daemon-reload
+    rm -f "$INSTALL_PATH"
+    rm -f "$AC_FLAG"
+    rm -rf "$(dirname "$STATE_FILE")"
+    exit 0
 fi
 
-# create last_profile and pre_AC_profile if missing, giving it initial value of balanced
+# create last_profile if missing, giving it initial value of balanced
 if [ ! -f "$STATE_FILE" ]; then
     mkdir -p "$(dirname "$STATE_FILE")"
     printf '%s\n' "balanced" > "$STATE_FILE"
 fi
-
-# if [ ! -f "$PRE_AC_STATE_FILE" ]; then
-#     mkdir -p "$(dirname "$PRE_AC_STATE_FILE")"
-#     printf '%s\n' "balanced" > "$PRE_AC_STATE_FILE"
-# fi
 
 # read and validate state file before applying change
 read -r saved_profile < "$STATE_FILE"
