@@ -2,7 +2,7 @@
 
 # This script is used to set the power profile on pop_os and retain it after reboot.
 
-# state files used to store user chosen power profile
+# state file to store user chosen power profile, AC_FLAG to keep track of plugged state
 STATE_FILE="/var/lib/power-profile/last_profile"
 AC_FLAG="/run/power-profile-ac.flag"
 
@@ -39,6 +39,7 @@ elif [ "${1:-}" = "uninstall" ]; then
     systemctl disable --now power-profile.service 2>/dev/null || true
     rm -f "$SERVICE_PATH"
     systemctl daemon-reload
+    # remove all files created by script
     rm -f "$INSTALL_PATH"
     rm -f "$AC_FLAG"
     rm -rf "$(dirname "$STATE_FILE")"
@@ -68,6 +69,7 @@ stdbuf -oL upower --monitor | while IFS= read -r line; do
         *line_power_AC*)
             ac_online=$(upower -i /org/freedesktop/UPower/devices/line_power_AC | awk '/online:/ {print $2}')
             if [ "$ac_online" = "yes" ] && [ ! -e "$AC_FLAG" ]; then
+                # create flag to skip saving automatic performance switch
                 : > "$AC_FLAG"
                 system76-power profile performance
             elif [ "$ac_online" = "no" ]; then
