@@ -2,8 +2,10 @@
 
 # This script is used to set the power profile on pop_os and retain it after reboot.
 
-# state file used to store user chosen power profile
+# state files used to store user chosen power profile
 STATE_FILE="/var/lib/power-profile/last_profile"
+AC_FLAG="/run/power-profile-ac.flag"
+# PRE_AC_STATE_FILE="/var/lib/power-profile/pre_AC_profile"
 
 # install block
 INSTALL_PATH="/usr/local/bin/power-profile.sh"
@@ -35,11 +37,16 @@ EOF
     exit 0
 fi
 
-# create last_profile if missing, giving it initial value of balanced
+# create last_profile and pre_AC_profile if missing, giving it initial value of balanced
 if [ ! -f "$STATE_FILE" ]; then
     mkdir -p "$(dirname "$STATE_FILE")"
     printf '%s\n' "balanced" > "$STATE_FILE"
 fi
+
+# if [ ! -f "$PRE_AC_STATE_FILE" ]; then
+#     mkdir -p "$(dirname "$PRE_AC_STATE_FILE")"
+#     printf '%s\n' "balanced" > "$PRE_AC_STATE_FILE"
+# fi
 
 # read and validate state file before applying change
 read -r saved_profile < "$STATE_FILE"
@@ -52,11 +59,35 @@ case "$saved_profile" in
         ;;
 esac
 
+# switch to performance when AC is plugged in, then switch back to previous state when unplugged
+stdbuf -oL upower --monitor | while IFS= read -r line; do
+    case "$line" in
+        *line_power_AC*)
+            ac_online=$(upower -i /org/freedesktop/UPower/devices/line_power_AC | awk '/online:/ {print $2}')
+            if [ "$ac_online" = "yes" ] && [ ! -e "$AC_FLAG" ]; then
+                : > "$AC_FLAG"
+                system76-power profile performance
+            elif [ "$ac_online" = "no" ]; then
+                rm -f "$AC_FLAG"
+                read -r saved_profile < "$STATE_FILE"
+                case "$saved_profile" in
+                    battery|balanced|performance)
+                        system76-power profile "$saved_profile"
+                        ;;
+                    *)
+                        system76-power profile balanced
+                        ;;
+                esac
+            fi
+            ;;
+    esac
+done &
+
 # monitor com.system76.PowerDaemon for changes to power profile
 stdbuf -oL gdbus monitor --system --dest com.system76.PowerDaemon --object-path /com/system76/PowerDaemon | while IFS= read -r line; do
     case "$line" in
         *PowerProfileSwitch*)
-        
+        [ -e "$AC_FLAG" ] && continue
         # extract and sanitize profile, then write it to STATE_FILE
         power_profile=$(awk -F"'" '{print $2}' <<<"$line")
         power_profile="${power_profile,,}"
